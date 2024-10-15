@@ -8,6 +8,6 @@
 int main() {
     printf("Hello, World!\n");
     printf("Tensor Size: %lu\n", sizeof(QingTensor));
-    QING_ASSERT(1!=1, "test");
+
     return 0;
 }

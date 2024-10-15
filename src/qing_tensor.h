@@ -20,7 +20,7 @@ struct sQingTensor {
     OpType  op;
 
     int64_t     stride[QING_MAX_DIMS];
-    size_t      nb[QING_MAX_DIMS];
+    size_t      offs[QING_MAX_DIMS];
 
     void        *data;
 };

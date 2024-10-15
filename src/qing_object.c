@@ -22,12 +22,17 @@ static QingObj* qingAllocateObject(size_t size, ObjType type) {
     return object;
 }
 
-static QingTensor* qingNewTensorImpl(int n_dims, DType dtype) {
+static QingTensor* qingNewTensorImpl(DType dtype, int n_dims, const int64_t *stride) {
 
     QING_ASSERT(n_dims >= 1 && n_dims <= QING_MAX_DIMS, "n_dims out of range");
 
     QingTensor* tensor = ALLOCATE_OBJ(QingTensor, QING_OBJ_TENSOR);
     tensor->type = dtype;
+
+    size_t data_size = stride[0];
+    for (int i = 1; i < n_dims; i++) {
+        data_size *= stride[i];
+    }
 
 
 
