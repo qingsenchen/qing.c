@@ -1,9 +1,11 @@
 #ifndef QING_COMMON_H
 #define QING_COMMON_H
 
-#define QING_MAX_DIMS    4
+#define QING_MAX_DIMS     4
+#define QING_MAX_NAME     64
 
 #define DEBUG
+#define DEBUG_LOG_GC
 
 #ifdef DEBUG
   #include <stdio.h>
