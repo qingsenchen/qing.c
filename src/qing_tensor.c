@@ -65,7 +65,7 @@ static QingTensor* qingNewTensorImpl(DType dtype, int n_dims, const int64_t *str
     return tensor;
 }
 
-void printTensor(const QingTensor* tensor) {
+void qingPrintTensor(const QingTensor* tensor) {
     printf("QingTensor(");
     const float* data = (float*)tensor->data;
     const int n_dims = qingTensorDims(tensor);

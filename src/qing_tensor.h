@@ -2,6 +2,7 @@
 #define QING_TENSOR_H
 
 #include <stdlib.h>
+#include <stdbool.h>
 #include "qing_common.h"
 #include "qing_object.h"
 
@@ -39,7 +40,7 @@ struct sQingTensor {
 QingTensor* qingNewTensor(DType dtype, int n_dims, const int64_t *stride);
 int qingTensorDims(const QingTensor * tensor);
 
-void printTensor(const QingTensor* tensor);
+void qingPrintTensor(const QingTensor* tensor);
 QingTensor* qingTensorSet(QingTensor* tensor, const float value);
 
 

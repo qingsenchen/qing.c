@@ -4,6 +4,8 @@
 #define ALLOCATE_OBJ(type, objectType) \
 (type*)qingAllocateObject(sizeof(type), objectType)
 
+#define AS_TENSOR(value)      ((QingTensor*)(value))
+
 typedef enum {
     QING_OBJ_TENSOR,
 } ObjType;
@@ -16,7 +18,6 @@ struct sQingObj {
 };
 
 QingObj* qingAllocateObject(size_t size, ObjType type);
-
 
 
 #endif //QING_OBJECT_H

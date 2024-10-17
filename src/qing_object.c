@@ -3,7 +3,6 @@
 
 #include "qing_object.h"
 #include "qing_memory.h"
-#include "qing_tensor.h"
 #include "qing_vm.h"
 
 QingObj* qingAllocateObject(size_t size, ObjType type) {

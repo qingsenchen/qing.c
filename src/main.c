@@ -15,7 +15,7 @@ int main() {
 
     qingTensorSet(one, 0.21);
 
-    printTensor(one);
+    qingPrintTensor(one);
 
     printf("Tensor Dims: %d\n", qingTensorDims(one));
 
