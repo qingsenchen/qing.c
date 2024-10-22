@@ -24,19 +24,19 @@ static const DTypeTraits dtype_traits[QING_DTYPE_COUNT] = {
     (QING_DTYPE_SIZE(dtype) * (size))
 
 #define QING_TENSOR_NROWS(tensor) \
-    (tensor->stride[1]*tensor->stride[2]*tensor->stride[3])
+    (tensor->sizes[1]*tensor->sizes[2]*tensor->sizes[3])
 
 #define QING_TENSOR_NATOM(tensor) \
-    (tensor->stride[0]*QING_TENSOR_NROWS(tensor))
+    (tensor->sizes[0]*QING_TENSOR_NROWS(tensor))
 
-static QingTensor* qingNewTensorImpl(DType dtype, int n_dims, const int64_t *stride, void *storage) {
+static QingTensor* qingNewTensorImpl(DType dtype, int n_dims, const int64_t *sizes, void *storage) {
 
     QING_ASSERT(n_dims >= 1 && n_dims <= QING_MAX_DIMS, "n_dims out of range");
 
-    size_t data_size = QING_ROW_SIZE(QING_DTYPE_F32, stride[0]);
+    size_t data_size = QING_ROW_SIZE(QING_DTYPE_F32, sizes[0]);
 
     for (int i = 1; i < n_dims; i++) {
-        data_size *= stride[i];
+        data_size *= sizes[i];
     }
 
     QingTensor* tensor = ALLOCATE_OBJ(QingTensor, QING_OBJ_TENSOR);
@@ -48,19 +48,18 @@ static QingTensor* qingNewTensorImpl(DType dtype, int n_dims, const int64_t *str
     *tensor = (QingTensor) {
         .type   = dtype,
         .op     = QING_OP_NONE,
-        .stride = { 1, 1, 1, 1 },
-        .bytes  = { 0, 0, 0, 0 },
+        .sizes = { 1, 1, 1, 1 },
+        .stride  = { 0, 0, 0, 0 },
         .storage   = storage
     };
 
     for (int i = 0; i < n_dims; i++) {
-        tensor->stride[i] = stride[i];
+        tensor->sizes[i] = sizes[i];
+        tensor->stride[i] = 1;
     }
 
-    tensor->bytes[0] = QING_DTYPE_SIZE(dtype);
-    tensor->bytes[1] = QING_ROW_SIZE(QING_DTYPE_F32, stride[0]);
-    for (int i = 2; i < QING_MAX_DIMS; i++) {
-        tensor->bytes[i] = tensor->bytes[i - 1]*tensor->stride[i - 1];
+    for (int i = n_dims - 2; i >= 0; --i) {
+        tensor->stride[i] = tensor->sizes[i + 1] * tensor->stride[i + 1];
     }
 
     //printf("diff:%lu\n", (void*)tensor->data - (void*)tensor);
@@ -89,7 +88,7 @@ QingTensor* qingNewTensor(DType dtype, int n_dims, const int64_t *stride) {
 QingTensor* qingAddImpl(OpType op, QingTensor* x, QingTensor* y) {
     int n_dims = qingTensorDims(x);
 
-    QingTensor * z = qingNewTensorImpl(x->type, n_dims, x->stride, NULL);
+    QingTensor * z = qingNewTensorImpl(x->type, n_dims, x->sizes, NULL);
     z->op = QING_OP_ADD;
     z->input[0] = x;
     z->input[1] = y;
@@ -99,6 +98,36 @@ QingTensor* qingAddImpl(OpType op, QingTensor* x, QingTensor* y) {
 
 QingTensor* qingTensorView(QingTensor* src, int n_dims, const int64_t *stride) {
     return qingTensorViewImpl(src, n_dims, stride);
+}
+
+QingTensor* qingTensorTranspose(QingTensor* src) {
+    int n_dims = qingTensorDims(src);
+    QING_ASSERT(n_dims == 2, "transpose only supports the 2d tensor");
+
+    QingTensor * result = qingNewTensorImpl(src->type, n_dims, src->sizes, src->storage);
+    qing_format(result, "%s (transpose)", src->name);
+    result->op = QING_OP_TRANSPOSE;
+
+    result->sizes[0] = src->sizes[1];
+    result->sizes[1] = src->sizes[0];
+
+    result->stride[0] = src->stride[1];
+    result->stride[1] = src->stride[0];
+
+    result->input[0] = src;
+
+    return result;
+}
+
+bool qingTensorIsContiguous(QingTensor* tensor) {
+
+    int n_dims = qingTensorDims(tensor);
+    for (int i = n_dims - 2; i >= 0; --i) {
+        if (tensor->stride[i] != tensor->sizes[i + 1] * tensor->stride[i + 1]) {
+            return false;
+        }
+    }
+    return true;
 }
 
 void qingPrintTensor(const QingTensor* tensor) {
@@ -111,23 +140,23 @@ void qingPrintTensor(const QingTensor* tensor) {
     for (int i = 0; i < n_atom; i++) {
         size_t span = 1;
         for (int j = n_dims - 1; j >= 1; --j) {
-            span *= tensor->stride[j];
+            span *= tensor->sizes[j];
             if (i % span == 0) {
                 printf("[");
             }
         }
 
         printf("%.2f", data[i]);
-        if ( (i+1) % tensor->stride[n_dims-1] > 0 && i+1 < n_atom) {
+        if ( (i+1) % tensor->sizes[n_dims-1] > 0 && i+1 < n_atom) {
             printf(",");
         }
 
-        if ( i+1 < tensor->stride[n_dims-1]) continue;
+        if ( i+1 < tensor->sizes[n_dims-1]) continue;
 
         span = 1;
         bool is_comma = false;
         for (int j = n_dims - 1; j >= 1; --j) {
-            span *= tensor->stride[j];
+            span *= tensor->sizes[j];
             if ( (i+1) % span == 0 ) {
                 printf("]");
                 if (i+1 < n_atom) {
@@ -141,9 +170,14 @@ void qingPrintTensor(const QingTensor* tensor) {
         }
     }
     printf("] ");
+
+    printf("sizes=(");
+    for (int i = 0; i < n_dims; i++) {
+        printf("%ld,", tensor->sizes[i]);
+    }
+    printf(") ");
     printf("stride=(");
-    for (int i = 0; i < QING_MAX_DIMS; i++) {
-        if (tensor->stride[i] == 1) break;
+    for (int i = 0; i < n_dims; i++) {
         printf("%ld,", tensor->stride[i]);
     }
     printf(") dtype=%s name=\'%s\')\n", QING_DTYPE_NAME(tensor->type), tensor->name);
@@ -173,7 +207,7 @@ QingTensor* qingTensorSetValue(QingTensor* tensor, const float value) {
 
 int qingTensorDims(const QingTensor * tensor) {
     for (int i = QING_MAX_DIMS - 1; i >= 1; --i) {
-        if (tensor->stride[i] > 1) {
+        if (tensor->sizes[i] > 1) {
             return i + 1;
         }
     }

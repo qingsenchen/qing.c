@@ -22,6 +22,9 @@ typedef struct sDTypeTraits {
 typedef enum {
     QING_OP_NONE = 0,
     QING_OP_ADD,
+
+    QING_OP_VIEW,
+    QING_OP_TRANSPOSE,
 } OpType;
 
 typedef struct sQingTensor QingTensor;
@@ -31,8 +34,8 @@ struct sQingTensor {
     DType       type;
     OpType      op;
 
-    int64_t     stride[QING_MAX_DIMS];
-    size_t      bytes[QING_MAX_DIMS];
+    int64_t     sizes[QING_MAX_DIMS];
+    size_t      stride[QING_MAX_DIMS];
 
     char        name[QING_MAX_NAME];
     QingTensor  *grad;
@@ -40,14 +43,15 @@ struct sQingTensor {
     void        *storage;
 };
 
-QingTensor* qingNewTensor(DType dtype, int n_dims, const int64_t *stride);
-QingTensor* qingTensorView(QingTensor* src, int n_dims, const int64_t *stride);
+QingTensor* qingNewTensor(DType dtype, int n_dims, const int64_t *sizes);
+QingTensor* qingTensorView(QingTensor* src, int n_dims, const int64_t *sizes);
+QingTensor* qingTensorTranspose(QingTensor* src);
 int qingTensorDims(const QingTensor * tensor);
 
 void qingPrintTensor(const QingTensor* tensor);
 QingTensor* qingTensorSetName(QingTensor* tensor, const char * name);
 QingTensor* qingTensorSetValue(QingTensor* tensor, const float value);
 
-
+bool qingTensorIsContiguous(QingTensor* tensor);
 
 #endif //QING_TENSOR_H
