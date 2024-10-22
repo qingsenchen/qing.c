@@ -13,4 +13,5 @@ add_executable(qing_c main.c
         qing_memory.h
         qing_tensor.c
         qing_tensor.h
-        qing_common.h)
+        qing_common.h
+)

@@ -3,6 +3,7 @@
 
 #define QING_MAX_DIMS     4
 #define QING_MAX_NAME     64
+#define QING_MAX_INPUT    10
 
 #define DEBUG
 #define DEBUG_LOG_GC

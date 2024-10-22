@@ -5,6 +5,9 @@
 #define ALLOCATE(type, count) \
     (type*)reallocate(NULL, 0, sizeof(type) * (count))
 
+#define ALLOCATE_ANY(size) \
+    reallocate(NULL, 0, size)
+
 #define FREE(type, pointer) reallocate(pointer, sizeof(type), 0)
 
 /* 数组的空间不够了，计算需要扩容的空间大小 */

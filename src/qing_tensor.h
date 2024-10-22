@@ -25,6 +25,7 @@ typedef enum {
 } OpType;
 
 typedef struct sQingTensor QingTensor;
+
 struct sQingTensor {
     QingObj     obj;
     DType       type;
@@ -34,14 +35,19 @@ struct sQingTensor {
     size_t      bytes[QING_MAX_DIMS];
 
     char        name[QING_MAX_NAME];
-    void        *data;
+    QingTensor  *grad;
+    QingTensor  *input[QING_MAX_INPUT];
+    void        *storage;
 };
 
 QingTensor* qingNewTensor(DType dtype, int n_dims, const int64_t *stride);
+QingTensor* qingTensorView(QingTensor* src, int n_dims, const int64_t *stride);
 int qingTensorDims(const QingTensor * tensor);
 
 void qingPrintTensor(const QingTensor* tensor);
-QingTensor* qingTensorSet(QingTensor* tensor, const float value);
+QingTensor* qingTensorSetName(QingTensor* tensor, const char * name);
+QingTensor* qingTensorSetValue(QingTensor* tensor, const float value);
+
 
 
 #endif //QING_TENSOR_H
