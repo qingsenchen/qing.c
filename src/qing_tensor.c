@@ -62,7 +62,6 @@ static QingTensor* qingNewTensorImpl(DType dtype, int n_dims, const int64_t *siz
         tensor->stride[i] = tensor->sizes[i + 1] * tensor->stride[i + 1];
     }
 
-    //printf("diff:%lu\n", (void*)tensor->data - (void*)tensor);
     return tensor;
 }
 
